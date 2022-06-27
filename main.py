@@ -36,7 +36,7 @@ def execute_queries():
             ),
             verify=False)
         # matrix
-        matrix = response.json()['data']['results']
+        matrix = response.json()['data']['result']
         for vector in matrix:
             instance_name = vector['metric']['instance']
             values = vector['values']
