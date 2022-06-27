@@ -6,7 +6,7 @@ import requests
 BASE_URL = 'http://localhost:9090/api/v1'
 START = '2022-06-26T00:00:00Z'
 END = '2022-06-26T00:01:00Z'
-OUTPUT_PATH = 'result.csv'
+OUTPUT_PATH = 'results'
 STEP = '15s'
 
 
@@ -24,7 +24,7 @@ def read_queries():
 
 
 def execute_queries():
-    frames = []
+    results = dict()
     for query in read_queries():
         response = requests.get(
             f'{BASE_URL}/query_range',
@@ -36,15 +36,17 @@ def execute_queries():
             ),
             verify=False)
         # matrix
-        data = response.json()['data']['result']
-        # TODO: for multiple jobs/instances
-        data = data[0]
-        # values for first job/instance
-        data = data['values']
-        df = pd.DataFrame(data, columns=['timestamp', query]).set_index('timestamp')
-        frames.append(df)
-    df = functools.reduce(lambda a, b: a.join(b), frames)
-    df.to_csv(OUTPUT_PATH)
+        matrix = response.json()['data']['results']
+        for vector in matrix:
+            instance_name = vector['metric']['instance']
+            values = vector['values']
+            instance = results.get(instance_name, [])
+            df = pd.DataFrame(values, columns=['timestamp', query]).set_index('timestamp')
+            instance.append(df)
+    for i, instance_name in enumerate(sorted(results)):
+        instance = results[instance_name]
+        df = functools.reduce(lambda a, b: a.join(b), instance)
+        df.to_csv(f'{OUTPUT_PATH}/{i}.csv')
 
 
 def main():
