@@ -1,4 +1,5 @@
 import functools
+import os
 
 import pandas as pd
 import requests
@@ -41,16 +42,18 @@ def execute_queries():
             instance_name = vector['metric']['instance']
             values = vector['values']
             instance = results.get(instance_name, [])
-            df = pd.DataFrame(values, columns=['timestamp', query]).set_index('timestamp')
+            df = pd.DataFrame(values, columns=['timestamp', query])
             instance.append(df)
             results[instance_name] = instance
     for i, instance_name in enumerate(sorted(results)):
         instance = results[instance_name]
-        df = functools.reduce(lambda a, b: a.join(b), instance)
+        df = functools.reduce(lambda a, b: a.merge(b, on='timestamp'), instance)
+        df['instance_name'] = instance_name
         df.to_csv(f'{OUTPUT_PATH}/{i}.csv')
 
 
 def main():
+    os.makedirs(OUTPUT_PATH, exist_ok=True)
     execute_queries()
 
 
