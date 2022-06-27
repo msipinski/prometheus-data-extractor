@@ -43,6 +43,7 @@ def execute_queries():
             instance = results.get(instance_name, [])
             df = pd.DataFrame(values, columns=['timestamp', query]).set_index('timestamp')
             instance.append(df)
+            results[instance_name] = instance
     for i, instance_name in enumerate(sorted(results)):
         instance = results[instance_name]
         df = functools.reduce(lambda a, b: a.join(b), instance)
