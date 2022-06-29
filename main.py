@@ -24,7 +24,12 @@ def read_queries():
     return read_lines('config/queries.txt')
 
 
+def read_instances():
+    return read_lines('config/instances.txt')
+
+
 def execute_queries():
+    allowed_instances = read_instances()
     results = dict()
     for query in read_queries():
         response = requests.get(
@@ -40,6 +45,8 @@ def execute_queries():
         matrix = response.json()['data']['result']
         for vector in matrix:
             instance_name = vector['metric']['instance']
+            if instance_name not in allowed_instances:
+                continue
             values = vector['values']
             instance = results.get(instance_name, [])
             df = pd.DataFrame(values, columns=['timestamp', query])
@@ -49,7 +56,7 @@ def execute_queries():
         instance = results[instance_name]
         df = functools.reduce(lambda a, b: a.merge(b, on='timestamp'), instance)
         df['instance_name'] = instance_name
-        df.to_csv(f'{OUTPUT_PATH}/{i}.csv')
+        df.to_csv(f'{OUTPUT_PATH}/{i}.csv', index=False)
 
 
 def main():
